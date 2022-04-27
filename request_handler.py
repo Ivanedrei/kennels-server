@@ -14,39 +14,67 @@ from views.locations_requests import delete_location, update_location
 # For now, think of a class as a container for functions that
 # work together for a common purpose. In this case, that
 # common purpose is to respond to HTTP requests from a client.
+
+
 class HandleRequests(BaseHTTPRequestHandler):
     # This is a Docstring it should be at the beginning of all classes and functions
     # It gives a description of the class or function
     """Controls the functionality of any GET, PUT, POST, DELETE requests to the server
     """
+
     def parse_url(self, path):
+        """find animals by location... http://localhost:8088/animals?location_id=1"""
         path_params = path.split("/")
         resource = path_params[1]
 
-        # Check if there is a query string parameter
         if "?" in resource:
-            # GIVEN: /customers?email=jenna@solis.com
+            param = resource.split("?")[1]
+            resource = resource.split("?")[0]
+            pair = param.split("=")
+            key = pair[0]
+            value = pair[1]
 
-            param = resource.split("?")[1]  # email=jenna@solis.com
-            resource = resource.split("?")[0]  # 'customers'
-            pair = param.split("=")  # [ 'email', 'jenna@solis.com' ]
-            key = pair[0]  # 'email'
-            value = pair[1]  # 'jenna@solis.com'
+            return (resource, key, value)
 
-            return ( resource, key, value )
-
-        # No query string parameter
         else:
             id = None
 
             try:
                 id = int(path_params[2])
             except IndexError:
-                pass  # No route parameter exists: /animals
+                pass
             except ValueError:
-                pass  # Request had trailing slash: /animals/
+                pass
 
             return (resource, id)
+
+        # path_params = path.split("/")
+        # resource = path_params[1]
+
+        # # Check if there is a query string parameter
+        # if "?" in resource:
+        #     # GIVEN: /customers?email=jenna@solis.com
+
+        #     param = resource.split("?")[1]  # email=jenna@solis.com
+        #     resource = resource.split("?")[0]  # 'customers'
+        #     pair = param.split("=")  # [ 'email', 'jenna@solis.com' ]
+        #     key = pair[0]  # 'email'
+        #     value = pair[1]  # 'jenna@solis.com'
+
+        #     return ( resource, key, value )
+
+        # # No query string parameter
+        # else:
+        #     id = None
+
+        #     try:
+        #         id = int(path_params[2])
+        #     except IndexError:
+        #         pass  # No route parameter exists: /animals
+        #     except ValueError:
+        #         pass  # Request had trailing slash: /animals/
+
+        #     return (resource, id)
 
     # Here's a class function
     def _set_headers(self, status):
@@ -86,7 +114,7 @@ class HandleRequests(BaseHTTPRequestHandler):
         # items in it, which means the request was for
         # `/animals` or `/animals/2`
         if len(parsed) == 2:
-            ( resource, id ) = parsed
+            (resource, id) = parsed
 
             if resource == "animals":
                 if id is not None:
@@ -103,13 +131,15 @@ class HandleRequests(BaseHTTPRequestHandler):
         # items in it, which means the request was for
         # `/resource?parameter=value`
         elif len(parsed) == 3:
-            ( resource, key, value ) = parsed
+            (resource, key, value) = parsed
 
             # Is the resource `customers` and was there a
             # query parameter that specified the customer
             # email as a filtering value?
-            if key == "email" and resource == "customers":
-                response = get_customers_by_email(value)
+            if key == "location" and resource == "animals":
+                response = get_animals_by_location(value)
+            # if key == "email" and resource == "customers":
+            #     response = get_customers_by_email(value)
 
         self.wfile.write(response.encode())
 
@@ -147,15 +177,15 @@ class HandleRequests(BaseHTTPRequestHandler):
         if resource == "employees":
             new_employee = create_employee(post_body)
             self.wfile.write(f"{new_employee}".encode())
-            
+
         new_customer = None
-        
+
         if resource == "customers":
             new_customer = create_customer(post_body)
             self.wfile.write(f"{new_customer}".encode())
-            
+
     def do_DELETE(self):
-    # Set a 204 response code
+        # Set a 204 response code
         self._set_headers(204)
 
     # Parse the URL
@@ -176,8 +206,8 @@ class HandleRequests(BaseHTTPRequestHandler):
 
     # Encode the new animal and send in response
         self.wfile.write("".encode())
-              
-    #This is to update data
+
+    # This is to update data
     def do_PUT(self):
         self._set_headers(204)
         content_len = int(self.headers.get('content-length', 0))
@@ -190,13 +220,13 @@ class HandleRequests(BaseHTTPRequestHandler):
         # Delete a single animal from the list
         if resource == "animals":
             update_animal(id, post_body)
-        
+
         if resource == "locations":
             update_location(id, post_body)
-        
+
         if resource == "employees":
             update_employee(id, post_body)
-        
+
         if resource == "customers":
             update_customer(id, post_body)
 
@@ -205,6 +235,8 @@ class HandleRequests(BaseHTTPRequestHandler):
 
 # This function is not inside the class. It is the starting
 # point of this application.
+
+
 def main():
     """Starts the server on port 8088 using the HandleRequests class
     """
